@@ -21,12 +21,18 @@
     }
   }],
   "provisioners": [{
+    "type": "file",
+    "source": "APP.tar",
+    "destination": "~/APP.tar"
+    },
+    {
     "type": "shell",
     "inline": [
               "sleep 30",
               "echo \"export AWS_DEFAULT_REGION=ap-southeast-1\" > ~/export",
               "echo lololol >> /tmp/text.txt",
-              "sudo yum install -y nodejs git"
+              "sudo yum install -y nodejs git",
+              "cd ~ && tar -xvf APP.tar"
             ]
     }],
   "post-processors": [{
