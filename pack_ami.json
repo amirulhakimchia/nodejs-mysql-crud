@@ -1,0 +1,38 @@
+{
+  "variables": {
+    "iam_instance_profile": "Bamboo_Agent_Role",
+    "subnet_id": "subnet-08f444799f5736c39",
+    "source_ami": "ami-0f86a70488991335e"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "region": "ap-southeast-1",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "source_ami": "{{user `source_ami`}}",
+    "instance_type": "t2.medium",
+    "ssh_username": "ec2-user",
+    "subnet_id": "{{user `subnet_id`}}",
+    "ami_name": "CC4 CRUD_{{timestamp}}",
+    "iam_instance_profile": "{{user `iam_instance_profile`}}",
+    "tags": {
+      "Name": "CC4 CRUD_{{timestamp}}",
+      "Base_AMI_Name": "{{ .SourceAMIName }}"
+    }
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+              "sleep 30",
+              "echo \"export AWS_DEFAULT_REGION=ap-southeast-1\" > ~/export",
+              "echo lololol >> /tmp/text.txt",
+              "sudo yum install -y nodejs git"
+            ]
+    }],
+  "post-processors": [{
+      "type": "manifest",
+      "output": "manifest.json",
+      "strip_path": true
+  }]
+}
+
