@@ -26,14 +26,20 @@
     "destination": "~/APP.tar"
     },
     {
+    "type": "file",
+    "source": "crud.service",
+    "destination": "/tmp/crud.service"
+    },
+    {
     "type": "shell",
     "inline": [
               "sleep 30",
-              "echo \"export AWS_DEFAULT_REGION=ap-southeast-1\" > ~/export",
-              "echo lololol >> /tmp/text.txt",
               "sudo yum install -y nodejs git",
-              "cd ~ && tar -xvf APP.tar"
-            ]
+              "cd ~ && tar -xvf APP.tar",
+              "sudo cp /tmp/crud.service /etc/systemd/system/crud.service",
+              "sudo systemctl start crud",
+              "sudo systemctl enable crud"
+              ]
     }],
   "post-processors": [{
       "type": "manifest",
