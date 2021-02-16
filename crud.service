@@ -1,0 +1,12 @@
+[Unit]
+Description=CRUD
+
+[Service]
+ExecStart=/usr/bin/node /home/ec2-user/APP/app.js
+Restart=always
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/APP
+
+[Install]
+WantedBy=multi-user.target
