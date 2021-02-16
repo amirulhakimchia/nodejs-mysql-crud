@@ -1,0 +1,66 @@
+Description: 'Deploys a MySQL RDS DB for the App'
+Parameters:
+  DbSnapshotIdentifier:
+    Type: String
+    Default: ''
+    Description: ARN/Name of Snapshot from which the application DB should take from
+  DBSize:
+    Type: String
+    Default: '20'
+    Description: 'Please enter the volume size for the DB'
+  VPCCloudformationStack:
+    Type: String
+    Default: ''
+    Description: 'Please enter the name of the VPC stack'
+
+Conditions:
+  HasDBSnapshotIdentifier: !Not [!Equals [!Ref DbSnapshotIdentifier, '']]
+  NoDBSnapshotIdentifier: !Equals [!Ref DbSnapshotIdentifier, '']
+
+
+Resources:
+  APPDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: 20
+      DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DbSnapshotIdentifier, !Ref 'AWS::NoValue']
+      DBInstanceClass: db.t2.micro
+      DBParameterGroupName:  default.mysql8.0
+      DBSubnetGroupName: !Ref RDSSUBNETGROUPDB
+      MultiAZ: true
+      StorageType: gp2
+      Engine: mysql
+      EngineVersion: 8.0.20
+      VPCSecurityGroups:
+        - !Ref DBVPCSGCIDR
+  RDSSUBNETGROUPDB:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: 'RDS Subnet group for App'
+      SubnetIds:
+        - {'Fn::ImportValue': !Sub '${VPCCloudformationStack}-DBSubnetA'}
+        - {'Fn::ImportValue': !Sub '${VPCCloudformationStack}-DBSubnetB'}
+  DBVPCSGCIDR:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Ingress for CIDRIP
+      VpcId: {'Fn::ImportValue': !Sub '${VPCCloudformationStack}-VPCID'}
+      Tags:
+        - Key: Name
+          Value:
+            !Join
+            - '-'
+            - - 'sg'
+              - !Ref AWS::StackName
+Outputs:
+  Endpoint:
+    Description: The RDS end point for database clients to connect to.
+    Value: !GetAtt APPDB.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+
+  DBSecurityGroup:
+    Description: 'SG of RDS'
+    Value: !Ref DBVPCSGCIDR
+    Export:
+      Name: !Sub '${AWS::StackName}-DBSG'
