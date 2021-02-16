@@ -11,6 +11,13 @@ Parameters:
   KeyName:
     Type: String
     Description: Enter the key name for resource access.
+  DBStackName:
+    Type: String
+    Description: Enter the name of the RDS CF stack that produces the DB.
+  LBWhitelistIP:
+    Type: String
+    Description: Enter the CIDR to be whitelisted on the created LB for web access
+
 Resources:
   ELBV2HTTPSLISTENER:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
@@ -120,7 +127,7 @@ Resources:
         - IpProtocol: tcp 
           FromPort: 80 
           ToPort: 80
-          CidrIp: 119.74.125.93/32 
+          CidrIp: !Ref LBWhitelistIP
       VpcId: {'Fn::ImportValue': !Sub '${VPCCloudformationStack}-VPCID'} 
       Tags: 
         - Key: Name 
@@ -148,3 +155,22 @@ Resources:
               - - 'sg' 
                 - !Ref AWS::StackName 
                 - 'ec2'
+  RDSBITBUCKETINGRESS:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      GroupId:
+        'Fn::ImportValue': !Sub '${DBStackName}-DBSG'
+      SourceSecurityGroupId: !Ref SGAPPEC2
+  APPASGPOLICY:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties: 
+      AutoScalingGroupName: !Ref ASGAPPCRUD
+      EstimatedInstanceWarmup: 300
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration: 
+        PredefinedMetricSpecification: 
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60

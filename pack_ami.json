@@ -34,7 +34,7 @@
     "type": "shell",
     "inline": [
               "sleep 30",
-              "sudo yum install -y nodejs git",
+              "sudo yum install -y nodejs",
               "cd ~ && tar -xvf APP.tar",
               "sudo cp /tmp/crud.service /etc/systemd/system/crud.service",
               "sudo systemctl start crud",
