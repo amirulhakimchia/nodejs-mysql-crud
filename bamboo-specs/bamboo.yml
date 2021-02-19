@@ -1,0 +1,79 @@
+---
+version: 2
+plan:
+  project-key: TEST
+  key: BUILN
+  name: build-nodejs-app-new
+stages:
+- Default Stage:
+    manual: false
+    final: false
+    jobs:
+    - Run Packer to build AMI
+Default Job:
+  key: JOB1
+  tasks:
+  - checkout:
+      force-clean-build: 'false'
+  - script:
+      interpreter: BINSH_OR_CMDEXE
+      scripts:
+      - |-
+        sed -i 's/DATABASE_HOST/${bamboo.database.host}/g' APP/config.js
+        sed -i 's/DATABASE_USER/${bamboo.database.user}/g' APP/config.js
+        sed -i 's/DATABASE_PASS/${bamboo.database.password}/g' APP/config.js
+  - script:
+      interpreter: BINSH_OR_CMDEXE
+      scripts:
+      - |-
+        tar -cvf APP.tar APP/
+
+        if [ -f "manifest.json" ]; then
+          rm manifest.json
+        fi
+
+        packer build pack_ami.json
+  - script:
+      interpreter: BINSH_OR_CMDEXE
+      scripts:
+      - |-
+        cat manifest.json
+        CRUD_AMI=`cat manifest.json | egrep 'artifact_id' | awk '{ print $2 }' | cut -f2 -d":" | sed 's/.\{2\}$//'`
+
+        aws ssm delete-parameter --name "/CC4/CRUD/amiKey-${bamboo.planRepository.branch}" --region ap-southeast-1 &>/dev/null
+        sleep 10
+        aws ssm put-parameter --name "/CC4/CRUD/amiKey-${bamboo.planRepository.branch}" --type "String" --value $CRUD_AMI --overwrite --region ap-southeast-1
+  artifacts:
+  - name: cf-yaml-template
+    pattern: app_stack_alb.yaml
+    shared: true
+    required: true
+variables:
+  database.host: davfrt4ufp3ttj.c1nszfd0ao3z.ap-southeast-1.rds.amazonaws.com
+  database.password: BAMSCRT@0@0@4FIPz8ImCOUoix+0V3Kdgw==
+  database.user: admin
+triggers:
+- polling:
+    period: '60'
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+notifications: []
+labels: []
+other:
+  concurrent-build-plugin: system-default
+---
+version: 2
+plan:
+  key: TEST-BUIL
+plan-permissions:
+- users:
+  - amirul
+  permissions:
+  - view
+  - edit
+  - build
+  - clone
+  - admin
+...
